@@ -45,41 +45,35 @@ export default function WeatherApp() {
 
     const searchLocations = async (query: string) => {
         if (!query) {
-            setLocations([])
-            return
+            setLocations([]);
+            return;
         }
 
         try {
-            const response = await fetch(
-                `https://api.geoapify.com/v1/geocode/autocomplete?text=${encodeURIComponent(
-                    query
-                )}&format=json&apiKey=${process.env.GEOAPIFY_API_KEY}`
-            )
-            const data = await response.json()
-            setLocations(data.results || [])
+            const response = await fetch(`/api/route?type=locations&query=${encodeURIComponent(query)}`);
+            const data = await response.json();
+            setLocations(data.results || []);
         } catch (error) {
-            console.error('Error fetching locations:', error)
-            setError('Failed to fetch locations. Please try again.')
+            console.error('Error fetching locations:', error);
+            setError('Failed to fetch locations. Please try again.');
         }
-    }
+    };
 
     const fetchWeather = async (lat: number, lon: number) => {
-        setLoading(true)
-        setError(null)
+        setLoading(true);
+        setError(null);
 
         try {
-            const response = await fetch(
-                `https://api.openweathermap.org/data/3.0/onecall?lat=${lat}&lon=${lon}&exclude=minutely,alerts&units=metric&appid=${process.env.OPENWEATHERMAP_API_KEY}`
-            )
-            const data = await response.json()
-            setWeatherData(data)
+            const response = await fetch(`/api/route?type=weather&lat=${lat}&lon=${lon}`);
+            const data = await response.json();
+            setWeatherData(data);
         } catch (error) {
-            console.error('Error fetching weather data:', error)
-            setError('Failed to fetch weather data. Please try again.')
+            console.error('Error fetching weather data:', error);
+            setError('Failed to fetch weather data. Please try again.');
         } finally {
-            setLoading(false)
+            setLoading(false);
         }
-    }
+    };
 
     const handleLocationSelect = (location: Location) => {
         setSelectedLocation(location)

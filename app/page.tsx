@@ -1,4 +1,7 @@
+import dotenv from "dotenv";
 import WeatherApp from '@/components/weather-app'
+
+dotenv.config();
 
 export default function Home() {
   return (
