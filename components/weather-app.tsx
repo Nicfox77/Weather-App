@@ -2,10 +2,9 @@
 
 import { useState } from 'react'
 import { Input } from '@/components/ui/input'
-import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Loader2, Search } from 'lucide-react'
-import { useDebounce } from 'use-debounce'
+import { Loader2 } from 'lucide-react'
+
 
 type Location = {
     formatted: string
@@ -36,9 +35,8 @@ type WeatherData = {
 
 export default function WeatherApp() {
     const [searchTerm, setSearchTerm] = useState('')
-    const [debouncedSearchTerm] = useDebounce(searchTerm, 300)
     const [locations, setLocations] = useState<Location[]>([])
-    const [selectedLocation, setSelectedLocation] = useState<Location | null>(null)
+    const [, setSelectedLocation] = useState<Location | null>(null)
     const [weatherData, setWeatherData] = useState<WeatherData | null>(null)
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState<string | null>(null)
@@ -50,7 +48,7 @@ export default function WeatherApp() {
         }
 
         try {
-            const response = await fetch(`/api/route?type=locations&query=${encodeURIComponent(query)}`);
+            const response = await fetch(`/api/geocode?query=${encodeURIComponent(query)}`);
             const data = await response.json();
             setLocations(data.results || []);
         } catch (error) {
@@ -64,7 +62,7 @@ export default function WeatherApp() {
         setError(null);
 
         try {
-            const response = await fetch(`/api/route?type=weather&lat=${lat}&lon=${lon}`);
+            const response = await fetch(`/api/weather?lat=${lat}&lon=${lon}`);
             const data = await response.json();
             setWeatherData(data);
         } catch (error) {
