@@ -5,7 +5,6 @@ import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Loader2 } from 'lucide-react'
 
-
 type Location = {
     formatted: string
     lat: number
@@ -36,7 +35,7 @@ type WeatherData = {
 export default function WeatherApp() {
     const [searchTerm, setSearchTerm] = useState('')
     const [locations, setLocations] = useState<Location[]>([])
-    const [, setSelectedLocation] = useState<Location | null>(null)
+    const [selectedLocation, setSelectedLocation] = useState<Location | null>(null)
     const [weatherData, setWeatherData] = useState<WeatherData | null>(null)
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState<string | null>(null)
