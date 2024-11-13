@@ -35,48 +35,64 @@ type WeatherData = {
 export default function WeatherApp() {
     const [searchTerm, setSearchTerm] = useState('')
     const [locations, setLocations] = useState<Location[]>([])
-    const [selectedLocation, setSelectedLocation] = useState<Location | null>(null)
+    const [selectedLocation, setSelectedLocation] = useState<Location | null>(
+        null
+    )
     const [weatherData, setWeatherData] = useState<WeatherData | null>(null)
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState<string | null>(null)
+    const [unit, setUnit] = useState<'metric' | 'imperial'>('metric')
+
+    // Email form states
+    const [email, setEmail] = useState('')
+    const [emailError, setEmailError] = useState<string | null>(null)
+    const [emailSuccess, setEmailSuccess] = useState<string | null>(null)
 
     const searchLocations = async (query: string) => {
         if (!query) {
-            setLocations([]);
-            return;
+            setLocations([])
+            return
         }
 
         try {
-            const response = await fetch(`/api/geocode?query=${encodeURIComponent(query)}`);
-            const data = await response.json();
-            setLocations(data.results || []);
+            const response = await fetch(
+                `/api/geocode?query=${encodeURIComponent(query)}`
+            )
+            const data = await response.json()
+            setLocations(data.results || [])
         } catch (error) {
-            console.error('Error fetching locations:', error);
-            setError('Failed to fetch locations. Please try again.');
+            console.error('Error fetching locations:', error)
+            setError('Failed to fetch locations. Please try again.')
         }
-    };
+    }
 
-    const fetchWeather = async (lat: number, lon: number) => {
-        setLoading(true);
-        setError(null);
+    const fetchWeather = async (
+        lat: number,
+        lon: number,
+        units: 'metric' | 'imperial'
+    ) => {
+        setLoading(true)
+        setError(null)
 
         try {
-            const response = await fetch(`/api/weather?lat=${lat}&lon=${lon}`);
-            const data = await response.json();
-            setWeatherData(data);
+            const response = await fetch(
+                `/api/weather?lat=${lat}&lon=${lon}&units=${units}`
+            )
+            const data = await response.json()
+            setWeatherData(data)
         } catch (error) {
-            console.error('Error fetching weather data:', error);
-            setError('Failed to fetch weather data. Please try again.');
+            console.error('Error fetching weather data:', error)
+            setError('Failed to fetch weather data. Please try again.')
         } finally {
-            setLoading(false);
+            setLoading(false)
         }
-    };
+    }
 
     const handleLocationSelect = (location: Location) => {
         setSelectedLocation(location)
         setSearchTerm(location.formatted)
         setLocations([])
-        fetchWeather(location.lat, location.lon)
+        fetchWeather(location.lat, location.lon, unit)
     }
 
     const formatDate = (timestamp: number) => {
@@ -94,9 +110,98 @@ export default function WeatherApp() {
         })
     }
 
+    // Handle unit change
+    const handleUnitChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const selectedUnit = e.target.value as 'metric' | 'imperial'
+        setUnit(selectedUnit)
+        if (selectedLocation) {
+            fetchWeather(selectedLocation.lat, selectedLocation.lon, selectedUnit)
+        }
+    }
+
+    // Email validation function
+    const validateEmail = (email: string) => {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+        return emailRegex.test(email)
+    }
+
+    const handleEmailSubmit = async (e: React.FormEvent) => {
+        e.preventDefault()
+        setEmailError(null)
+        setEmailSuccess(null)
+
+        if (!validateEmail(email)) {
+            setEmailError('Please enter a valid email address.')
+            return
+        }
+
+        if (!weatherData || !selectedLocation) {
+            setEmailError('No weather data available to send.')
+            return
+        }
+
+        try {
+            const response = await fetch('/api/send-email', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    email,
+                    location: selectedLocation.formatted,
+                    weatherData,
+                    unit,
+                }),
+            })
+
+            const data = await response.json()
+
+            if (response.ok) {
+                setEmailSuccess('Weather report sent successfully!')
+                setEmail('')
+            } else {
+                setEmailError(data.message || 'Failed to send email. Please try again.')
+            }
+        } catch (error) {
+            console.error('Error sending email:', error)
+            setEmailError('Failed to send email. Please try again.')
+        }
+    }
+
+    // Determine unit symbols
+    const unitSymbol = unit === 'metric' ? '°C' : '°F'
+    const windSpeedUnit = unit === 'metric' ? 'm/s' : 'mph'
+
     return (
         <div className="container mx-auto p-4 max-w-3xl">
             <h1 className="text-3xl font-bold mb-4">Weather App</h1>
+
+            {/* Unit Selector */}
+            <div className="mb-4">
+                <form>
+                    <label className="mr-4">
+                        <input
+                            type="radio"
+                            name="unit"
+                            value="metric"
+                            checked={unit === 'metric'}
+                            onChange={handleUnitChange}
+                            className="mr-1"
+                        />
+                        Celsius
+                    </label>
+                    <label className="mr-4">
+                        <input
+                            type="radio"
+                            name="unit"
+                            value="imperial"
+                            checked={unit === 'imperial'}
+                            onChange={handleUnitChange}
+                            className="mr-1"
+                        />
+                        Fahrenheit
+                    </label>
+                </form>
+            </div>
+
             <div className="relative mb-4">
                 <Input
                     type="text"
@@ -133,15 +238,23 @@ export default function WeatherApp() {
 
             {weatherData && (
                 <div className="space-y-4">
+                    {/* Current Weather Card */}
                     <Card>
                         <CardHeader>
-                            <CardTitle>Current Weather</CardTitle>
+                            <CardTitle>
+                                Current Weather in {selectedLocation?.formatted}
+                            </CardTitle>
                         </CardHeader>
                         <CardContent>
                             <div className="flex items-center justify-between">
                                 <div>
-                                    <p className="text-4xl font-bold">{Math.round(weatherData.current.temp)}°C</p>
-                                    <p className="text-lg">{weatherData.current.weather[0].description}</p>
+                                    <p className="text-4xl font-bold">
+                                        {Math.round(weatherData.current.temp)}
+                                        {unitSymbol}
+                                    </p>
+                                    <p className="text-lg">
+                                        {weatherData.current.weather[0].description}
+                                    </p>
                                 </div>
                                 <img
                                     src={`http://openweathermap.org/img/wn/${weatherData.current.weather[0].icon}@2x.png`}
@@ -150,13 +263,47 @@ export default function WeatherApp() {
                                 />
                             </div>
                             <div className="mt-4 grid grid-cols-2 gap-2">
-                                <p>Feels like: {Math.round(weatherData.current.feels_like)}°C</p>
+                                <p>
+                                    Feels like: {Math.round(weatherData.current.feels_like)}
+                                    {unitSymbol}
+                                </p>
                                 <p>Humidity: {weatherData.current.humidity}%</p>
-                                <p>Wind: {Math.round(weatherData.current.wind_speed)} m/s</p>
+                                <p>
+                                    Wind: {Math.round(weatherData.current.wind_speed)}{' '}
+                                    {windSpeedUnit}
+                                </p>
                             </div>
                         </CardContent>
                     </Card>
 
+                    {/* Email Submission Form */}
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Send Weather Report to Your Email</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <form onSubmit={handleEmailSubmit} className="space-y-4">
+                                <Input
+                                    type="email"
+                                    placeholder="Enter your email address"
+                                    value={email}
+                                    onChange={(e) => setEmail(e.target.value)}
+                                    className="w-full"
+                                    required
+                                />
+                                {emailError && <p className="text-red-500">{emailError}</p>}
+                                {emailSuccess && <p className="text-green-500">{emailSuccess}</p>}
+                                <button
+                                    type="submit"
+                                    className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                                >
+                                    Send Report
+                                </button>
+                            </form>
+                        </CardContent>
+                    </Card>
+
+                    {/* Hourly Forecast Card */}
                     <Card>
                         <CardHeader>
                             <CardTitle>Hourly Forecast</CardTitle>
@@ -171,13 +318,17 @@ export default function WeatherApp() {
                                             alt={hour.weather[0].description}
                                             className="w-8 h-8"
                                         />
-                                        <p className="text-sm font-semibold">{Math.round(hour.temp)}°C</p>
+                                        <p className="text-sm font-semibold">
+                                            {Math.round(hour.temp)}
+                                            {unitSymbol}
+                                        </p>
                                     </div>
                                 ))}
                             </div>
                         </CardContent>
                     </Card>
 
+                    {/* 7-Day Forecast Card */}
                     <Card>
                         <CardHeader>
                             <CardTitle>7-Day Forecast</CardTitle>
@@ -185,16 +336,23 @@ export default function WeatherApp() {
                         <CardContent>
                             <div className="space-y-2">
                                 {weatherData.daily.slice(1).map((day) => (
-                                    <div key={day.dt} className="flex items-center justify-between">
+                                    <div
+                                        key={day.dt}
+                                        className="flex items-center justify-between"
+                                    >
                                         <p className="w-24">{formatDate(day.dt)}</p>
                                         <img
                                             src={`http://openweathermap.org/img/wn/${day.weather[0].icon}.png`}
                                             alt={day.weather[0].description}
                                             className="w-8 h-8"
                                         />
-                                        <p className="w-32 text-center">{day.weather[0].description}</p>
+                                        <p className="w-32 text-center">
+                                            {day.weather[0].description}
+                                        </p>
                                         <p className="w-24 text-right">
-                                            {Math.round(day.temp.min)}°C / {Math.round(day.temp.max)}°C
+                                            {Math.round(day.temp.min)}
+                                            {unitSymbol} / {Math.round(day.temp.max)}
+                                            {unitSymbol}
                                         </p>
                                     </div>
                                 ))}
