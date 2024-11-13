@@ -21,6 +21,7 @@ export default function RootLayout({
         <body className={`${inter.className} bg-background text-foreground`}>
         {children}
         <SpeedInsights />
+        <Analytics  />
         </body>
         </html>
     )
