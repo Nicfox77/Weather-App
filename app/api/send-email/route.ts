@@ -5,6 +5,10 @@ import nodemailer from 'nodemailer'
 
 export async function POST(req: NextRequest) {
     try {
+
+        console.log('EMAIL_USER is defined:', !!process.env.EMAIL_USER)
+        console.log('EMAIL_PASS is defined:', !!process.env.EMAIL_PASS)
+
         const { email, location, weatherData, unit } = await req.json()
 
         if (!email || !location || !weatherData || !unit) {
