@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Loader2 } from 'lucide-react'
@@ -35,9 +35,7 @@ type WeatherData = {
 export default function WeatherApp() {
     const [searchTerm, setSearchTerm] = useState('')
     const [locations, setLocations] = useState<Location[]>([])
-    const [selectedLocation, setSelectedLocation] = useState<Location | null>(
-        null
-    )
+    const [selectedLocation, setSelectedLocation] = useState<Location | null>(null)
     const [weatherData, setWeatherData] = useState<WeatherData | null>(null)
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState<string | null>(null)
@@ -55,9 +53,7 @@ export default function WeatherApp() {
         }
 
         try {
-            const response = await fetch(
-                `/api/geocode?query=${encodeURIComponent(query)}`
-            )
+            const response = await fetch(`/api/geocode?query=${encodeURIComponent(query)}`)
             const data = await response.json()
             setLocations(data.results || [])
         } catch (error) {
@@ -66,18 +62,12 @@ export default function WeatherApp() {
         }
     }
 
-    const fetchWeather = async (
-        lat: number,
-        lon: number,
-        units: 'metric' | 'imperial'
-    ) => {
+    const fetchWeather = async (lat: number, lon: number, units: 'metric' | 'imperial') => {
         setLoading(true)
         setError(null)
 
         try {
-            const response = await fetch(
-                `/api/weather?lat=${lat}&lon=${lon}&units=${units}`
-            )
+            const response = await fetch(`/api/weather?lat=${lat}&lon=${lon}&units=${units}`)
             const data = await response.json()
             setWeatherData(data)
         } catch (error) {
@@ -92,8 +82,23 @@ export default function WeatherApp() {
         setSelectedLocation(location)
         setSearchTerm(location.formatted)
         setLocations([])
-        fetchWeather(location.lat, location.lon, unit)
+        // Remove fetchWeather call from here
     }
+
+    // Handle unit change
+    const handleUnitChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const selectedUnit = e.target.value as 'metric' | 'imperial'
+        setUnit(selectedUnit)
+        // Remove fetchWeather call from here
+    }
+
+    // Use useEffect to fetch weather data when selectedLocation or unit changes
+    useEffect(() => {
+        if (selectedLocation) {
+            fetchWeather(selectedLocation.lat, selectedLocation.lon, unit)
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [selectedLocation, unit])
 
     const formatDate = (timestamp: number) => {
         return new Date(timestamp * 1000).toLocaleDateString('en-US', {
@@ -108,15 +113,6 @@ export default function WeatherApp() {
             hour: 'numeric',
             hour12: true,
         })
-    }
-
-    // Handle unit change
-    const handleUnitChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const selectedUnit = e.target.value as 'metric' | 'imperial'
-        setUnit(selectedUnit)
-        if (selectedLocation) {
-            fetchWeather(selectedLocation.lat, selectedLocation.lon, selectedUnit)
-        }
     }
 
     // Email validation function
@@ -241,9 +237,7 @@ export default function WeatherApp() {
                     {/* Current Weather Card */}
                     <Card>
                         <CardHeader>
-                            <CardTitle>
-                                Current Weather in {selectedLocation?.formatted}
-                            </CardTitle>
+                            <CardTitle>Current Weather in {selectedLocation?.formatted}</CardTitle>
                         </CardHeader>
                         <CardContent>
                             <div className="flex items-center justify-between">
@@ -252,9 +246,7 @@ export default function WeatherApp() {
                                         {Math.round(weatherData.current.temp)}
                                         {unitSymbol}
                                     </p>
-                                    <p className="text-lg">
-                                        {weatherData.current.weather[0].description}
-                                    </p>
+                                    <p className="text-lg">{weatherData.current.weather[0].description}</p>
                                 </div>
                                 <img
                                     src={`http://openweathermap.org/img/wn/${weatherData.current.weather[0].icon}@2x.png`}
@@ -269,8 +261,7 @@ export default function WeatherApp() {
                                 </p>
                                 <p>Humidity: {weatherData.current.humidity}%</p>
                                 <p>
-                                    Wind: {Math.round(weatherData.current.wind_speed)}{' '}
-                                    {windSpeedUnit}
+                                    Wind: {Math.round(weatherData.current.wind_speed)} {windSpeedUnit}
                                 </p>
                             </div>
                         </CardContent>
@@ -336,19 +327,14 @@ export default function WeatherApp() {
                         <CardContent>
                             <div className="space-y-2">
                                 {weatherData.daily.slice(1).map((day) => (
-                                    <div
-                                        key={day.dt}
-                                        className="flex items-center justify-between"
-                                    >
+                                    <div key={day.dt} className="flex items-center justify-between">
                                         <p className="w-24">{formatDate(day.dt)}</p>
                                         <img
                                             src={`http://openweathermap.org/img/wn/${day.weather[0].icon}.png`}
                                             alt={day.weather[0].description}
                                             className="w-8 h-8"
                                         />
-                                        <p className="w-32 text-center">
-                                            {day.weather[0].description}
-                                        </p>
+                                        <p className="w-32 text-center">{day.weather[0].description}</p>
                                         <p className="w-24 text-right">
                                             {Math.round(day.temp.min)}
                                             {unitSymbol} / {Math.round(day.temp.max)}
