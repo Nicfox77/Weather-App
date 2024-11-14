@@ -1,4 +1,4 @@
-'use client'
+'use client';
 
 import { useState, useEffect } from 'react'
 import { Input } from '@/components/ui/input'
@@ -41,7 +41,17 @@ export default function WeatherApp() {
     const [weatherData, setWeatherData] = useState<WeatherData | null>(null)
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState<string | null>(null)
-    const [unit, setUnit] = useState<'metric' | 'imperial'>('metric')
+    const [unit, setUnit] = useState<'metric' | 'imperial'>('imperial')
+
+    useEffect(() => {
+        const delayDebounceFn = setTimeout(() => {
+            if (searchTerm) {
+                searchLocations(searchTerm)
+            }
+        }, 300)
+
+        return () => clearTimeout(delayDebounceFn)
+    }, [searchTerm])
 
     const searchLocations = async (query: string) => {
         if (!query) {
@@ -127,10 +137,7 @@ export default function WeatherApp() {
                     type="text"
                     placeholder="Search for a location..."
                     value={searchTerm}
-                    onChange={(e) => {
-                        setSearchTerm(e.target.value)
-                        searchLocations(e.target.value)
-                    }}
+                    onChange={(e) => setSearchTerm(e.target.value)}
                     className="w-full"
                 />
                 {locations.length > 0 && (
