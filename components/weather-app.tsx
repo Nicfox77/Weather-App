@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Loader2 } from 'lucide-react'
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
+import { Label } from '@/components/ui/label'
 
 type Location = {
     formatted: string
@@ -100,9 +102,26 @@ export default function WeatherApp() {
         })
     }
 
+    const handleUnitChange = (value: string) => {
+        setUnit(value as 'metric' | 'imperial')
+    }
+
     return (
         <div className="container mx-auto p-4 sm:px-0 max-w-3xl">
-            <h1 className="text-3xl font-bold mb-4">Weather App</h1>
+            <div className="flex justify-between items-center mb-4">
+                <h1 className="text-3xl font-bold">Weather App</h1>
+                <RadioGroup defaultValue={unit} onValueChange={handleUnitChange} className="flex space-x-2">
+                    <div className="flex items-center space-x-1">
+                        <RadioGroupItem value="metric" id="metric" />
+                        <Label htmlFor="metric">°C</Label>
+                    </div>
+                    <div className="flex items-center space-x-1">
+                        <RadioGroupItem value="imperial" id="imperial" />
+                        <Label htmlFor="imperial">°F</Label>
+                    </div>
+                </RadioGroup>
+            </div>
+
             <div className="relative mb-4">
                 <Input
                     type="text"
@@ -146,7 +165,7 @@ export default function WeatherApp() {
                         <CardContent>
                             <div className="flex items-center justify-between">
                                 <div>
-                                    <p className="text-4xl font-bold">{Math.round(weatherData.current.temp)}°C</p>
+                                    <p className="text-4xl font-bold">{Math.round(weatherData.current.temp)}°{unit === 'metric' ? 'C' : 'F'}</p>
                                     <p className="text-lg">{weatherData.current.weather[0].description}</p>
                                 </div>
                                 <img
@@ -156,9 +175,9 @@ export default function WeatherApp() {
                                 />
                             </div>
                             <div className="mt-4 grid grid-cols-2 gap-2">
-                                <p>Feels like: {Math.round(weatherData.current.feels_like)}°C</p>
+                                <p>Feels like: {Math.round(weatherData.current.feels_like)}°{unit === 'metric' ? 'C' : 'F'}</p>
                                 <p>Humidity: {weatherData.current.humidity}%</p>
-                                <p>Wind: {Math.round(weatherData.current.wind_speed)} m/s</p>
+                                <p>Wind: {Math.round(weatherData.current.wind_speed)} {unit === 'metric' ? 'm/s' : 'mph'}</p>
                             </div>
                         </CardContent>
                     </Card>
@@ -177,7 +196,7 @@ export default function WeatherApp() {
                                             alt={hour.weather[0].description}
                                             className="w-8 h-8"
                                         />
-                                        <p className="text-sm font-semibold">{Math.round(hour.temp)}°C</p>
+                                        <p className="text-sm font-semibold">{Math.round(hour.temp)}°{unit === 'metric' ? 'C' : 'F'}</p>
                                     </div>
                                 ))}
                             </div>
@@ -200,7 +219,7 @@ export default function WeatherApp() {
                                         />
                                         <p className="w-32 text-center">{day.weather[0].description}</p>
                                         <p className="w-24 text-right">
-                                            {Math.round(day.temp.min)}°C / {Math.round(day.temp.max)}°C
+                                            {Math.round(day.temp.min)}°{unit === 'metric' ? 'C' : 'F'} / {Math.round(day.temp.max)}°{unit === 'metric' ? 'C' : 'F'}
                                         </p>
                                     </div>
                                 ))}
