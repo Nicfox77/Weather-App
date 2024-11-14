@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Loader2 } from 'lucide-react'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { Label } from '@/components/ui/label'
+import { Button } from '@/components/ui/button'
 
 type Location = {
     formatted: string
@@ -42,6 +43,13 @@ export default function WeatherApp() {
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState<string | null>(null)
     const [unit, setUnit] = useState<'metric' | 'imperial'>('imperial')
+
+
+    // Email form states
+    const [email, setEmail] = useState('')
+    const [emailError, setEmailError] = useState<string | null>(null)
+    const [emailSuccess, setEmailSuccess] = useState<string | null>(null)
+
 
     useEffect(() => {
         const delayDebounceFn = setTimeout(() => {
@@ -116,6 +124,53 @@ export default function WeatherApp() {
         setUnit(value as 'metric' | 'imperial')
     }
 
+    // Email validation function
+    const validateEmail = (email: string) => {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+        return emailRegex.test(email)
+    }
+
+    const handleEmailSubmit = async (e: React.FormEvent) => {
+        e.preventDefault()
+        setEmailError(null)
+        setEmailSuccess(null)
+
+        if (!validateEmail(email)) {
+            setEmailError('Please enter a valid email address.')
+            return
+        }
+
+        if (!weatherData || !selectedLocation) {
+            setEmailError('No weather data available to send.')
+            return
+        }
+
+        try {
+            const response = await fetch('/api/send-email', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    email,
+                    location: selectedLocation.formatted,
+                    weatherData,
+                    unit,
+                }),
+            })
+
+            const data = await response.json()
+
+            if (response.ok) {
+                setEmailSuccess('Weather report sent successfully!')
+                setEmail('')
+            } else {
+                setEmailError(data.message || 'Failed to send email. Please try again.')
+            }
+        } catch (error) {
+            console.error('Error sending email:', error)
+            setEmailError('Failed to send email. Please try again.')
+        }
+    }
+
     return (
         <div className="container mx-auto p-4 sm:px-0 max-w-3xl">
             <div className="flex justify-between items-center mb-4">
@@ -188,7 +243,29 @@ export default function WeatherApp() {
                             </div>
                         </CardContent>
                     </Card>
-
+                    {/* Email Submission Form */}
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Send Weather Report to Your Email</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <form onSubmit={handleEmailSubmit} className="space-y-4">
+                                <Input
+                                    type="email"
+                                    placeholder="Enter your email address"
+                                    value={email}
+                                    onChange={(e) => setEmail(e.target.value)}
+                                    className="w-full"
+                                    required
+                                />
+                                {emailError && <p className="text-destructive">{emailError}</p>}
+                                {emailSuccess && <p className="text-green-500">{emailSuccess}</p>}
+                                <Button type="submit" className="w-full">
+                                    Send Report
+                                </Button>
+                            </form>
+                        </CardContent>
+                    </Card>
                     <Card>
                         <CardHeader>
                             <CardTitle>Hourly Forecast</CardTitle>
