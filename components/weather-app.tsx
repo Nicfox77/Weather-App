@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Loader2 } from 'lucide-react'
@@ -43,6 +43,7 @@ export default function WeatherApp() {
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState<string | null>(null)
     const [unit, setUnit] = useState<'metric' | 'imperial'>('imperial')
+    const locationSelectedRef = useRef(false)
 
 
     // Email form states
@@ -53,7 +54,7 @@ export default function WeatherApp() {
 
     useEffect(() => {
         const delayDebounceFn = setTimeout(() => {
-            if (searchTerm) {
+            if (searchTerm && !locationSelectedRef.current) {
                 searchLocations(searchTerm)
             }
         }, 300)
@@ -97,6 +98,8 @@ export default function WeatherApp() {
         setSelectedLocation(location)
         setSearchTerm(location.formatted)
         setLocations([])
+        locationSelectedRef.current = true
+        setTimeout(() => locationSelectedRef.current = false, 500)
     }
 
     useEffect(() => {
